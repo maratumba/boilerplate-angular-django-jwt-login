@@ -2,6 +2,7 @@
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import * as jwtDecode from 'jwt-decode';
 
 import { User } from '@/_models/user';
 import { environment } from 'environments/environment';
@@ -26,8 +27,10 @@ export class AuthenticationService {
                 // login successful if there's a jwt token in the response
                 if (user && user.token) {
                     // store user details and jwt token in local storage to keep user logged in between page refreshes
-                    localStorage.setItem('currentUser', JSON.stringify(user));
-                    this.currentUserSubject.next(user);
+                        let currentUser = jwtDecode(user.token)
+                        currentUser.token = user.token
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                        this.currentUserSubject.next(jwtDecode(user.token));
                 }
 
                 return user;
