@@ -24,7 +24,7 @@ python manage.py migrate
 ### Front-end installation
 ```sh
 # At repo root:
-cd app-ng
+cd ng-app
 npm install
 ```
 
