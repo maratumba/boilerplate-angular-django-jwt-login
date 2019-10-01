@@ -14,7 +14,7 @@ export class JwtInterceptor implements HttpInterceptor {
         const currentUser = this.authenticationService.currentUserValue;
         const isLoggedIn = currentUser && currentUser.token;
         const isApiUrl = request.url.startsWith(environment.apiUrl);
-        console.log(request)
+        // console.log(request)
         if (isLoggedIn 
             && isApiUrl 
             && currentUser 
@@ -29,7 +29,16 @@ export class JwtInterceptor implements HttpInterceptor {
         } 
         
         return next.handle(request).pipe(catchError(error => {
-            if (error instanceof HttpErrorResponse && error.status === 403) {
+
+            if ( error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403)
+              && request.url === `${environment.apiUrl}/${environment.jwtRefresh}`) {
+              // We do another check to see if refresh token failed
+              // In this case we want to logout user and to redirect it to login page  
+              // console.log('on your way out')            
+              this.authenticationService.logout();              
+              return throwError(error);
+            }
+            else if (error instanceof HttpErrorResponse && error.status === 403) {
                 return this.handle403Error(request, next);
             } else {
                 return throwError(error);
@@ -42,11 +51,11 @@ export class JwtInterceptor implements HttpInterceptor {
     private refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
 
     private handle403Error(request: HttpRequest<any>, next: HttpHandler) {
-        console.log('handling 403')
+        // console.log('handling 403')
         if (!this.isRefreshing) {
           this.isRefreshing = true;
           this.refreshTokenSubject.next(null);
-      
+
           return this.authenticationService.refreshToken().pipe(
             switchMap((token: any) => {
               this.isRefreshing = false;
